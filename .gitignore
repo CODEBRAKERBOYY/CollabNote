@@ -1,0 +1,19 @@
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Optional npm cache
+.npm
+
+# VS Code settings folder (optional)
+.vscode/
+
+# Mac system files (optional)
+.DS_Store
