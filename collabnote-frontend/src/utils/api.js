@@ -1,10 +1,11 @@
+// collabnote-frontend/src/utils/api.js
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5001/api", // backend base URL
+  baseURL: "http://localhost:5001/api", // backend API
 });
 
-// automatically attach token
+// automatically attach token if available
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem("token");
   if (token) {

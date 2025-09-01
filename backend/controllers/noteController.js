@@ -1,35 +1,84 @@
-const Note = require('../models/Note');
+const Note = require("../models/Note");
 
-exports.createNote = async (req, res) => {
+// ====================== CREATE NOTE ======================
+const createNote = async (req, res) => {
   try {
+    console.log("👉 Incoming request to create note");
+    console.log("👉 req.user:", req.user);
+
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Unauthorized: No user found" });
+    }
+
     const { title, content } = req.body;
-    const note = new Note({
-      title: title || "Untitled",
-      content: content || "",
-      owner: req.user?.id || null, // ✅ allow null if no auth
-      lastEdited: Date.now()
+    const note = await Note.create({
+      title,
+      content,
+      user: req.user.id,
     });
-    await note.save();
+
+    console.log("✅ Note saved:", note);
     res.status(201).json(note);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("❌ Error creating note:", err.message);
+    res.status(500).json({ error: err.message });
   }
 };
 
-exports.listNotes = async (req, res) => {
+// ====================== GET ALL NOTES ======================
+const getNotes = async (req, res) => {
   try {
-    let notes;
-    if (req.user?.id) {
-      // Authenticated: only return notes the user owns or collaborates on
-      notes = await Note.find({
-        $or: [{ owner: req.user.id }, { collaborators: req.user.id }]
-      }).sort({ updatedAt: -1 });
-    } else {
-      // No auth: return all notes (⚠ only for testing!)
-      notes = await Note.find().sort({ updatedAt: -1 });
-    }
+    const notes = await Note.find({ user: req.user.id });
     res.json(notes);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ error: err.message });
   }
+};
+
+// ====================== GET SINGLE NOTE ======================
+const getNoteById = async (req, res) => {
+  try {
+    const note = await Note.findOne({ _id: req.params.id, user: req.user.id });
+    if (!note) return res.status(404).json({ message: "Note not found" });
+    res.json(note);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ====================== UPDATE NOTE ======================
+const updateNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const note = await Note.findOneAndUpdate(
+      { _id: id, user: req.user.id },
+      req.body,
+      { new: true }
+    );
+    if (!note) return res.status(404).json({ message: "Note not found" });
+    res.json(note);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ====================== DELETE NOTE ======================
+const deleteNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const note = await Note.findOneAndDelete({ _id: id, user: req.user.id });
+    if (!note) return res.status(404).json({ message: "Note not found" });
+    res.json({ message: "Note deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ✅ Export all functions together
+module.exports = {
+  createNote,
+  getNotes,
+  getNoteById,
+  updateNote,
+  deleteNote,
 };
